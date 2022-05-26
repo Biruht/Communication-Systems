@@ -1,0 +1,27 @@
+signalSource = 'File';
+initParam = helperAMRInit(signalSource);
+
+% Calculate AMR system parameters based on the initialized parameters
+[amrParam,sigSrc] = helperAMRConfig(initParam);
+
+% Create the data viewer object
+viewer = helperAMRViewer('MeterID',initParam.MeterID, ...
+    'LogData',initParam.LogData, ...
+    'LogFilename',initParam.LogFilename, ...
+    'Fc',amrParam.CenterFrequency, ...
+    'SignalSourceType',initParam.SignalSourceType);
+
+start(viewer);
+radioTime = 0; % Initialize the radio time
+
+% Main Processing Loop
+while radioTime < initParam.Duration
+    rcvdSignal = sigSrc();
+    amrBits = helperAMRRxPHY(rcvdSignal,amrParam);
+    amrMessages = helperAMRMessageParser(amrBits,amrParam);
+    update(viewer,amrMessages);
+    radioTime = radioTime + amrParam.FrameDuration;
+end
+
+stop(viewer); % Stop the viewer
+release(sigSrc); % Release the signal source
